@@ -7,6 +7,7 @@ import torch.distributed as dist
 '''
 Use `CUDA_VISIBILE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4  script.py (--args1)`
 So you can read local_rank from `os.environ['LOCAL_RANK']`
+More detail about distributed training can be found in https://www.notion.so/Multi-GPU-training-29ab8b37375845389ee327b7a600d2e8
 '''
 
 
