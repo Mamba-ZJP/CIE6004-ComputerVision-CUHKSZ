@@ -11,6 +11,7 @@ import torchvision
 import numpy as np
 from d2l import torch as d2l
 import cv2
+from mmseg.core.evaluation import metrics
 
 from configs.config import cfg
 from train.dist_utils import is_main_process, reduce_value
@@ -164,58 +165,33 @@ class Trainer(object):
 
         return self.calc_IoU(pred_mask, mask_gt)
 
-    def calc_IoU(self, img, mask):
-        sum1 = img + mask
-        sum1[sum1 > 0] = 1
-        sum2 = img + mask
-        sum2[sum2 < 2] = 0
-        sum2[sum2 >= 2] = 1
-        if torch.sum(sum1) == 0:
-            return 1
-        else:
-            return 1.0 * torch.sum(sum2) / torch.sum(sum1)
+    def calc_IoU(self, pred, gt):
+        '''Calculate meanIoU between pred and gt'''
+        # pdb.set_trace()
+        # sum1 = pred + gt
+        # sum1[sum1 > 0] = 1
+        # sum2 = pred + gt
+        # sum2[sum2 < 2] = 0
+        # sum2[sum2 >= 2] = 1
+        # if torch.sum(sum1) == 0:
+        #     iou = 1
+        # else:
+        #     iou = 1.0 * torch.sum(sum2) / torch.sum(sum1)
+
+        ''' 
+        Use API in MMSegmentation. 
+        More details can be found https://github.com/open-mmlab/mmsegmentation/blob/master/mmseg/core/evaluation/metrics.py
+        Careful about ignore_index
+        '''
+        to_ndarray = lambda x: x.cpu().detach().numpy()
+        pred = to_ndarray(pred)
+        gt = to_ndarray(gt)
+        # If ignore background index, which ignore the corresponding index in pred and gt, makes wrong pred less -> less union -> higher iou
+        iou_portrait = metrics.mean_iou(pred, gt, num_classes=2, ignore_index=-1)['IoU'][1] 
+    
+        return iou_portrait
     
 
-    def intersect_and_union(pred_label,
-                            label,
-                            num_classes,
-                            ignore_index,
-                            label_map=dict(),
-                            reduce_zero_label=False):
-        """Calculate intersection and Union.
-        Args:
-            pred_label (ndarray | str): Prediction segmentation map
-                or predict result filename.
-            label (ndarray | str): Ground truth segmentation map
-                or label filename.
-            num_classes (int): Number of categories.
-            ignore_index (int): Index that will be ignored in evaluation.
-            label_map (dict): Mapping old labels to new labels. The parameter will
-                work only when label is str. Default: dict().
-            reduce_zero_label (bool): Whether ignore zero label. The parameter will
-                work only when label is str. Default: False.
-        Returns:
-            torch.Tensor: The intersection of prediction and ground truth
-                histogram on all classes.
-            torch.Tensor: The union of prediction and ground truth histogram on
-                all classes.
-            torch.Tensor: The prediction histogram on all classes.
-            torch.Tensor: The ground truth histogram on all classes.
-        """
-
-        mask = (label != ignore_index)
-        pred_label = pred_label[mask]
-        label = label[mask]
-
-        intersect = pred_label[pred_label == label]
-        area_intersect = torch.histc(
-            intersect.float(), bins=(num_classes), min=0, max=num_classes - 1)
-        area_pred_label = torch.histc(
-            pred_label.float(), bins=(num_classes), min=0, max=num_classes - 1)
-        area_label = torch.histc(
-            label.float(), bins=(num_classes), min=0, max=num_classes - 1)
-        area_union = area_pred_label + area_label - area_intersect
-        return area_intersect, area_union, area_pred_label, area_label
 
 
 class AverageMeter(object):

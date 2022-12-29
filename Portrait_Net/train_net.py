@@ -12,6 +12,7 @@ from train.optimize import get_optimizer
 from train.lr_scheduler import get_lr_scheduler
 from utils.loss import get_loss
 from configs.config import cfg
+from train import dist_utils
 
 
 def synchronize():
@@ -60,11 +61,13 @@ if __name__ == '__main__':
     # try distributed training firstly
     # pdb.set_trace()
     if cfg.distributed:
-        cfg.local_rank = int(os.environ['RANK']) % torch.cuda.device_count()
-        torch.cuda.set_device(cfg.local_rank)  # 对当前进程启用所用的gpu
-        torch.distributed.init_process_group(backend="nccl",
-                                             init_method="env://") # start the distributed backend
-        synchronize()
+        dist_utils.init_distributed_mode(cfg)
+        
+        # cfg.local_rank = int(os.environ['RANK']) % torch.cuda.device_count()
+        # torch.cuda.set_device(cfg.local_rank)  # 对当前进程启用所用的gpu
+        # torch.distributed.init_process_group(backend="nccl",
+        #                                      init_method="env://") # start the distributed backend
+        # synchronize()
     
     train(cfg, model)
 
