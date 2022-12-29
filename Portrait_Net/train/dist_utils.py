@@ -4,6 +4,11 @@ import argparse
 import torch
 import torch.distributed as dist
 
+'''
+Use `CUDA_VISIBILE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4  script.py (--args1)`
+So you can read local_rank from `os.environ['LOCAL_RANK']`
+'''
+
 
 def init_distributed_mode(args):
     # 'RANK' 'WORLD_SIZE' 'LOCAL_RANK' will automatically be keys of os.environ, if use `torchrun` or `python -m torch.distributed`
