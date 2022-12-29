@@ -15,15 +15,6 @@ from configs.config import cfg
 from train import dist_utils
 
 
-def synchronize():
-    if not dist.is_available():
-        return 
-    if not dist.is_initialized():
-        return 
-    if dist.get_world_size() == 1:
-        return
-    dist.barrier()
-
 
 def train(cfg, model):
     trainer = Trainer(model)
@@ -57,17 +48,9 @@ def train(cfg, model):
 
 if __name__ == '__main__':
     model = get_portraitnet_mobilenetv2()
-    # print(os.environ['RANK']) # 相当于在每张卡上都运行了一遍
-    # try distributed training firstly
-    # pdb.set_trace()
+  
     if cfg.distributed:
         dist_utils.init_distributed_mode(cfg)
-        
-        # cfg.local_rank = int(os.environ['RANK']) % torch.cuda.device_count()
-        # torch.cuda.set_device(cfg.local_rank)  # 对当前进程启用所用的gpu
-        # torch.distributed.init_process_group(backend="nccl",
-        #                                      init_method="env://") # start the distributed backend
-        # synchronize()
     
     train(cfg, model)
 
